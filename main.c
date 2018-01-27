@@ -1,35 +1,43 @@
 #include <stdio.h>
-#include <unistd.h>
-#include <dlfcn.h>
+#include <stdarg.h>
+#include <stdlib.h>
 #include <ffi.h>
 
-int main() {
-    void *lib_handle;
-    int (*funcp)(void);
+int add_nums(int count, ...) {
+    int result = 0;
+    va_list args;
+    va_start(args, count);
+    for (int i = 0; i < count; ++i) {
+        result += va_arg(args, int);
+    }
+    va_end(args);
+    return result;
+}
 
+/**
+ * 运行 ./ffidemo 4 1 2 3 4
+ * 输出 10
+ */
+int main(int argc, char **argv) {
     ffi_cif cif;
-    ffi_type *args[1];
-    void *values[1];
-    char *s;
-    ffi_arg rc;
+    int arg_count = argc - 1;
+    void *fn = &add_nums;  // 函数地址
+    ffi_type *return_type = &ffi_type_sint;
+    ffi_type **arg_types = (ffi_type **) alloca(arg_count * sizeof(ffi_type *));
+    void **arg_values = (void **) alloca(arg_count * sizeof(void *));
+    int *values = (int *) alloca(arg_count * sizeof(int));
 
-    // 加载 libc，并定位 getpid 的地址
-    lib_handle = dlopen("libc.dylib", RTLD_LAZY);
-    if (lib_handle == NULL)
-        return -1;
-    funcp = (void (*)(void)) dlsym(lib_handle, "getpid");
-
-    // ffi 调用
-    args[0] = &ffi_type_pointer;
-    values[0] = &s;
-    if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ffi_type_sint, args) == FFI_OK) {
-        ffi_call(&cif, funcp, &rc, values);
-        printf("%d\n", rc);
+    for (int i = 0; i < arg_count; i++) {
+        arg_types[i] = &ffi_type_sint;
+        values[i] = atoi(argv[i + 1]);
+        arg_values[i] = &values[i];
     }
 
-    printf("%d\n", (*funcp)());    
+    if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, arg_count, return_type, arg_types) == FFI_OK) {
+        int return_value = 0;
+        ffi_call(&cif, fn, &return_value, arg_values);
+        printf("%d\n", return_value);
+    }
 
-    // 直接调用
-    printf("%d\n", getpid());
-    return 0;
+    return EXIT_SUCCESS;
 }
