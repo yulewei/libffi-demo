@@ -2,6 +2,7 @@
 
 ``` sh
 $ brew install libffi
+$ brew install cmake
 $ cmake .
 $ make
 $ ./ffidemo 4 1 2 3 4
