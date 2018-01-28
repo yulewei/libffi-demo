@@ -8,7 +8,7 @@ $ ./ffidemo 4 1 2 3 4
 10
 ```
 
-cmake 方式编译运行：
+或者 cmake 方式编译运行：
 ```
 $ brew install cmake
 $ cmake .
